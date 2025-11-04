@@ -3,8 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-require('../app_api/models/db');
 require('dotenv').config();
+require('../app_api/models/db');
 
 // MVC 구조의 라우트들
 var indexRouter = require('./routes/index');
