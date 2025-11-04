@@ -3,7 +3,7 @@ const readline = require('readline');
 
 // const dbURI = 'mongodb://localhost/Loc8r';
 const dbPassword = process.env.MONGODB_PASSWORD;
-const dbURI = `mongodb+srv://myatlasdbuser:${encodeURIComponent(dbPassword)}@loc8r.leomxdl.mongodb.net/Loc8r`;
+const dbURI = `mongodb+srv://myatlasdbuser:${encodeURIComponent(dbPassword)}@loc8r.leomxdl.mongodb.net/?appName=Loc8r`;
 
 
 const connect = () => {
