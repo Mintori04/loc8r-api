@@ -3,10 +3,14 @@ const readline = require('readline');
 
 // const dbURI = 'mongodb://localhost/Loc8r';
 const dbPassword = process.env.MONGODB_PASSWORD;
-const dbURI = `mongodb+srv://myatlasdbuser:${encodeURIComponent(dbPassword)}@loc8r.leomxdl.mongodb.net/?appName=Loc8r`;
+if (!dbPassword) {
+  console.error('MONGODB_PASSWORD 환경 변수가 설정되지 않았습니다.');
+  process.exit(1);
+}
+const dbURI = `mongodb+srv://myatlasdbuser:${encodeURIComponent(dbPassword)}@loc8r.leomxdl.mongodb.net/Loc8r?appName=Loc8r`;
 
 
-const connect = () => {
+const connect = () => { 
   setTimeout(() => mongoose.connect(dbURI), 1000);
 };
 
