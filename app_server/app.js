@@ -1,6 +1,7 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
+var fs = require('fs');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const passport = require('passport');
@@ -50,24 +51,43 @@ app.use(passport.initialize());
 app.use('/api', apiRouter);
 // app.use('/', indexRouter);
 
-// app.get('*', (req, res, next) => {
-//   res.sendFile(path.join(__dirname, 'app_public', 'build/browser', 'index.html'));
-// });
+// API가 아닌 모든 요청을 Angular 앱으로 전달 (SPA fallback)
+app.get('*', (req, res, next) => {
+  // API 요청은 제외
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
 
-// Angular 앱 라우팅 - 모든 경로를 index.html로 전달 (SPA)
-app.get(/(\/about|\/location\/[a-f0-9]{24}|\/login|\/register|\/)?$/, (req, res, next) => {
-  const indexPath = path.join(__dirname, '../app_public/dist/loc8r-public/index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      // dist 폴더가 없으면 build 폴더 시도
-      const buildPath = path.join(__dirname, '../app_public/build/browser/index.html');
-      res.sendFile(buildPath, (err2) => {
-        if (err2) {
-          next(err2);
-        }
-      });
+  // 가능한 경로들
+  const possiblePaths = [
+    path.join(__dirname, '../app_public/dist/loc8r-public/index.html'),
+    path.join(__dirname, '../app_public/build/browser/index.html'),
+    path.join(__dirname, '../app_public/dist/loc8r-public/browser/index.html'),
+    path.join(__dirname, 'app_public/build/browser/index.html'),
+    path.join(__dirname, 'app_public/dist/loc8r-public/index.html')
+  ];
+
+  // 파일이 존재하는 첫 번째 경로 찾기
+  let foundPath = null;
+  for (const filePath of possiblePaths) {
+    if (fs.existsSync(filePath)) {
+      foundPath = filePath;
+      break;
     }
-  });
+  }
+
+  if (foundPath) {
+    res.sendFile(foundPath, (err) => {
+      if (err) {
+        console.error('Error sending file:', err);
+        next(err);
+      }
+    });
+  } else {
+    console.error('index.html not found in any of these paths:');
+    possiblePaths.forEach(p => console.error('  -', p));
+    next(createError(404));
+  }
 });
 
 // catch 404 and forward to error handler
