@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { expressjwt: jwt } = require('express-jwt');
+
+// JWT_SECRET 검증
+if (!process.env.JWT_SECRET) {
+    console.error('ERROR: JWT_SECRET environment variable is not set!');
+    console.error('Please set JWT_SECRET in your environment variables or .env file');
+    process.exit(1);
+}
+
 const auth = jwt({
     secret: process.env.JWT_SECRET,
     algorithms: ['HS256'],

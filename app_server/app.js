@@ -54,8 +54,20 @@ app.use('/api', apiRouter);
 //   res.sendFile(path.join(__dirname, 'app_public', 'build/browser', 'index.html'));
 // });
 
-app.get(/(\/about|\/location\/[a-f0-9]{24})/i, (req, res, next) => {
-  res.sendFile(path.join(__dirname, 'app_public', 'build/browser', 'index.html'));
+// Angular 앱 라우팅 - 모든 경로를 index.html로 전달 (SPA)
+app.get(/(\/about|\/location\/[a-f0-9]{24}|\/login|\/register|\/)?$/, (req, res, next) => {
+  const indexPath = path.join(__dirname, '../app_public/dist/loc8r-public/index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      // dist 폴더가 없으면 build 폴더 시도
+      const buildPath = path.join(__dirname, '../app_public/build/browser/index.html');
+      res.sendFile(buildPath, (err2) => {
+        if (err2) {
+          next(err2);
+        }
+      });
+    }
+  });
 });
 
 // catch 404 and forward to error handler
