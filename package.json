@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
+    "build": "cd app_public && npm install && npm run build:prod",
+    "postinstall": "cd app_public && npm install && npm run build:prod",
     "dev": "nodemon",
     "stop": "taskkill /F /IM node.exe",
     "kill-port": "netstat -ano | findstr :3000 && for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :3000') do taskkill /F /PID %a"
