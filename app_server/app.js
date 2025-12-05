@@ -3,8 +3,11 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const passport = require('passport');
+const cors = require('cors');
 require('dotenv').config();
 require('../app_api/models/db');
+require('../app_api/config/passport');
 
 // MVC 구조의 라우트들
 var indexRouter = require('./routes/index');
@@ -21,10 +24,39 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, 'app_public', 'build/browser')));
+app.use(express.static(path.join(__dirname, '../app_public/build')));
+app.use(express.static(path.join(__dirname, '../app_public/dist/loc8r-public')));
+
+const corsOptions = {
+  origin: '*',
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions))
+
+// CORS 설정
+app.use('/api', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // 라우트 설정
-app.use('/', indexRouter);
+app.use(passport.initialize());
 app.use('/api', apiRouter);
+// app.use('/', indexRouter);
+
+// app.get('*', (req, res, next) => {
+//   res.sendFile(path.join(__dirname, 'app_public', 'build/browser', 'index.html'));
+// });
+
+app.get(/(\/about|\/location\/[a-f0-9]{24})/i, (req, res, next) => {
+  res.sendFile(path.join(__dirname, 'app_public', 'build/browser', 'index.html'));
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -33,6 +65,10 @@ app.use(function(req, res, next) {
 
 // error handler
 app.use(function(err, req, res, next) {
+  if (err.name === 'UnauthorizedError') {
+    res.status(401).json({ message: "message" + err.name + ": " + err.message });
+    return;
+  }
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -42,5 +78,4 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
-
+module.exports = app; 

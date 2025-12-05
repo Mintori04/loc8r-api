@@ -1,5 +1,26 @@
 const mongoose = require('mongoose');
 const Loc = mongoose.model('Location');
+const User = mongoose.model('User');
+
+const getAuthor = async (req, res) => {
+  if (req.auth && req.auth.email) {
+    try {
+      const user = await User.findOne({ email: req.auth.email }).exec();
+      if(!user) {
+        res.status(404).json({ "message": "User not found" });
+        return null;
+      }
+      return user.name;
+    } catch (err) {
+      console.log(err);
+      res.status(404).json(err);
+      return null;
+    }
+  } else {
+    res.status(404).json({ "message": "User not authenticated" });
+    return null;
+  }
+};
 
 const doSetAverageRating = async (location) => {
   if (location.reviews && location.reviews.length > 0) {
@@ -29,47 +50,50 @@ const updateAverageRating = async (locationId) => {
   }
 };
 
-const doAddReview = async (req, res, location) => {
+const doAddReview = async (req, res, location, author) => {
   if (!location) {
-    return res.status(404).json({ "message": "Location not found" });
-  }
-
-  const { author, rating, reviewText } = req.body;
-  location.reviews.push({ author, rating, reviewText });
-
-  try {
-    const updatedLocation = await location.save();
-    await updateAverageRating(updatedLocation._id);
-    const thisReview = updatedLocation.reviews.slice(-1).pop();
-    return res.status(201).json(thisReview);
-  } catch (err) {
-    console.error('Error creating review:', err);
-    if (err.name === 'ValidationError') {
-      return res.status(400).json({ 'message': 'Error creating review', 'error': err.message, 'name': 'ValidationError' });
+    res
+    .status(404)
+    .json({ "message": "Location not found" });
+  } else {
+    const { rating, reviewText } = req.body;
+    location.reviews.push({ author, rating, reviewText
+    });
+    try {
+      const savedLocation = await location.save();
+      updateAverageRating(savedLocation._id);
+      const thisReview = savedLocation.reviews.slice(-1).pop();
+      res.status(201).json(thisReview);
+    } catch (err) {
+      return res
+      .status(400)
+      .json(err);
     }
-    return res.status(400).json({ 'message': 'Error creating review', 'error': err.message });
   }
 };
 
 const reviewsCreate = async (req, res) => {
-  const locationId = req.params.locationid;
-  if (!locationId) {
-    return res.status(404).json({ "message": "Location not found" });
-  }
-
   try {
-    const location = await Loc.findById(locationId).select('reviews').exec();
-    if (location) {
-      await doAddReview(req, res, location);
+    const userName = await getAuthor(req, res);
+    if (!userName) {
+      return; // getAuthor에서 이미 에러 응답을 보냈으면 종료
+    }
+    
+    const locationId = req.params.locationid;
+    if (locationId) {
+      try {
+        const location = await Loc.findById(locationId).select('reviews').exec();
+        await doAddReview(req, res, location, userName);
+      } catch (err) {
+        res.status(400).json(err);
+      }
     } else {
-      return res.status(404).json({ "message": "Location not found" });
+      res.status(404).json({ "message": "Location not found" });
     }
   } catch (err) {
-    console.error('Error in reviewsCreate:', err);
-    if (err.name === 'ValidationError') {
-      return res.status(400).json({ 'message': 'Error creating review', 'error': err.message, 'name': 'ValidationError' });
+    if (!res.headersSent) {
+      res.status(400).json(err);
     }
-    return res.status(400).json({ 'message': 'Error creating review', 'error': err.message });
   }
 };
 
