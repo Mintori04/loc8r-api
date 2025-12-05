@@ -1,7 +1,6 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var fs = require('fs');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const passport = require('passport');
@@ -51,44 +50,9 @@ app.use(passport.initialize());
 app.use('/api', apiRouter);
 // app.use('/', indexRouter);
 
-// API가 아닌 모든 요청을 Angular 앱으로 전달 (SPA fallback)
-app.get('*', (req, res, next) => {
-  // API 요청은 제외
-  if (req.path.startsWith('/api')) {
-    return next();
-  }
-
-  // 가능한 경로들
-  const possiblePaths = [
-    path.join(__dirname, '../app_public/dist/loc8r-public/index.html'),
-    path.join(__dirname, '../app_public/build/browser/index.html'),
-    path.join(__dirname, '../app_public/dist/loc8r-public/browser/index.html'),
-    path.join(__dirname, 'app_public/build/browser/index.html'),
-    path.join(__dirname, 'app_public/dist/loc8r-public/index.html')
-  ];
-
-  // 파일이 존재하는 첫 번째 경로 찾기
-  let foundPath = null;
-  for (const filePath of possiblePaths) {
-    if (fs.existsSync(filePath)) {
-      foundPath = filePath;
-      break;
-    }
-  }
-
-  if (foundPath) {
-    res.sendFile(foundPath, (err) => {
-      if (err) {
-        console.error('Error sending file:', err);
-        next(err);
-      }
-    });
-  } else {
-    console.error('index.html not found in any of these paths:');
-    possiblePaths.forEach(p => console.error('  -', p));
-    next(createError(404));
-  }
-});
+// app.get('*', (req, res, next) => {
+//   res.sendFile(path.join(__dirname, 'app_public', 'build/browser', 'index.html'));
+// });
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
